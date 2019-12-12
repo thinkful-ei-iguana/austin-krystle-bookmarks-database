@@ -6,14 +6,28 @@ const uuid = require('uuid/v4')
 const bookmarkRouter = express.Router();
 const bodyParser = express.json();
 
+const serializeBookmark = bookmark => ({
+    id: bookmark.id,
+    url: bookmark.url,
+    title: bookmark.title,
+    rating: bookmark.rating,
+    description: bookmark.description,
+})
+
 bookmarkRouter
     .route('/')
-    .get((req, res) => {
-        res.json(bookmarks);
+    .get((req, res, next) => {
+        const knexInstance = req.app.get('db')
+        BookmarksService.getAllBookmarks(knexInstance)
+            .then(bookmarks => {
+                res.json(bookmarks.map(serializeBookmark))
+            })
+        .catch(next)
     })
 
-    .post(bodyParser, (req,res) => {
+    .post(bodyParser, (req,res, next) => {
         const { title, desc, url, rating } = req.body;
+        const newBookmark = { title, desc, url, rating }
 
         if(!title) {
             logger.error('Title is required')
